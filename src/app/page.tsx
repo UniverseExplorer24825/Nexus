@@ -1,100 +1,340 @@
+import Link from "next/link";
+import { ContentContainer } from "@/components/ui/content-container";
+import { PageHeader } from "@/components/layout/page-header";
+import { Card, CardHeader, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Search,
+  PlusCircle,
+  Calendar,
+  Compass,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  Boxes,
+  FileCheck,
+  ClipboardList,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 
-export default function Home() {
-  const pillars = [
+export default function OverviewPage() {
+  const summaryMetrics = [
     {
-      title: "Resource Discovery",
-      description:
-        "Centralized directory of underused academic lab apparatus, rapid-prototyping tools, and testing facilities.",
-      tag: "Catalog",
-      status: "Configured",
+      title: "Available Resources",
+      value: "0",
+      status: "Awaiting Database",
+      description: "Apparatus & spaces ready for booking",
+      icon: Boxes,
+      badgeVariant: "neutral" as const,
     },
     {
-      title: "Eligibility & Clearance",
-      description:
-        "Strict departmental clearances, user training verifications, and safety compliance checks prior to access.",
-      tag: "Compliance",
-      status: "Configured",
+      title: "Pending Bookings",
+      value: "0",
+      status: "Queue Empty",
+      description: "Requests awaiting custodian review",
+      icon: Clock,
+      badgeVariant: "neutral" as const,
     },
     {
-      title: "Custody & Approvals",
-      description:
-        "Two-party owner authorization workflows, scheduled checkout handovers, and clear chains of responsibility.",
-      tag: "Governance",
-      status: "Configured",
+      title: "Active Loans",
+      value: "0",
+      status: "No Active Custody",
+      description: "Equipment currently checked out",
+      icon: Calendar,
+      badgeVariant: "neutral" as const,
     },
     {
-      title: "Auditable Lifecycle & Returns",
-      description:
-        "Immutable return inspection records, condition grading, and an auditable activity history for accountability.",
-      tag: "Audit Trail",
-      status: "Configured",
+      title: "Approvals Needed",
+      value: "0",
+      status: "Up to Date",
+      description: "Action items for your listed items",
+      icon: FileCheck,
+      badgeVariant: "teal" as const,
+    },
+  ];
+
+  const categories = [
+    "All Categories",
+    "Analytical & Testing",
+    "Fabrication & CNC",
+    "Computing & Server Hardware",
+    "Cleanrooms & Specialized Spaces",
+    "Optics & Imaging",
+  ];
+
+  const trustWorkflow = [
+    {
+      step: "01",
+      title: "Discover",
+      desc: "Search cross-institutional catalogs with real-time specs and availability.",
+      icon: Search,
+    },
+    {
+      step: "02",
+      title: "Verify Eligibility",
+      desc: "Ensure departmental clearances and safety certifications are confirmed.",
+      icon: ShieldCheck,
+    },
+    {
+      step: "03",
+      title: "Request Booking",
+      desc: "Specify project purpose, required accessories, and reserved time slots.",
+      icon: ClipboardList,
+    },
+    {
+      step: "04",
+      title: "Owner Approval",
+      desc: "Lab manager reviews researcher profile and authorizes access.",
+      icon: CheckCircle2,
+    },
+    {
+      step: "05",
+      title: "Secure Check Out",
+      desc: "Custody transfer initiated with baseline condition recording.",
+      icon: ArrowRight,
+    },
+    {
+      step: "06",
+      title: "Audited Return",
+      desc: "Inspect condition on return, document issues, and log immutable trail.",
+      icon: RotateCcw,
     },
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl text-center">
-        <Badge variant="info" className="mb-4">
-          TechCircuit Hackathon &bull; Platform Foundation
-        </Badge>
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl dark:text-slate-50">
-          Nexus Resource Network
-        </h1>
-        <p className="mt-4 text-lg text-slate-600 sm:text-xl dark:text-slate-300">
-          A secure, institutional resource-sharing framework enabling universities, laboratories,
-          and makerspaces to discover and safely share underused scientific equipment and spaces.
-        </p>
+    <ContentContainer>
+      {/* Page Header */}
+      <PageHeader
+        title="Institutional Resource Overview"
+        description="Monitor equipment custody, review clearance workflows, and discover shared departmental tools."
+        badge={<Badge variant="teal">TechCircuit Network</Badge>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link href="/resources">
+              <Button variant="teal" size="sm">
+                <Compass className="h-4 w-4" />
+                <span>Explore Directory</span>
+              </Button>
+            </Link>
+            <Link href="/my-resources">
+              <Button variant="outline" size="sm">
+                <PlusCircle className="h-4 w-4" />
+                <span>List a Resource</span>
+              </Button>
+            </Link>
+          </div>
+        }
+      />
+
+      {/* Welcome & Mission Section */}
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-teal-600" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
+                Welcome to ShareGrid
+              </span>
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              Trusted Institutional Equipment & Space Sharing
+            </h2>
+            <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-400">
+              ShareGrid enables universities, colleges, laboratories, and makerspaces to share
+              underutilized equipment, computing clusters, and specialized testing facilities
+              safely. Every transaction is governed by eligibility verification, custodian approval,
+              and auditable condition logs.
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60">
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                Institutional Member
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Consortium Sandbox
+              </p>
+            </div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 font-bold text-xs text-white dark:bg-slate-700">
+              IM
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2">
-        {pillars.map((pillar) => (
-          <Card key={pillar.title} className="flex flex-col justify-between">
-            <CardHeader>
-              <div className="flex items-center justify-between pb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {pillar.tag}
-                </span>
-                <Badge variant="neutral">{pillar.status}</Badge>
+      {/* Summary Metrics */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between pb-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            System Activity Summary
+          </h2>
+          <span className="text-xs text-slate-400">
+            Live metrics will populate after database connection
+          </span>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {summaryMetrics.map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <Card key={metric.title} className="relative overflow-hidden">
+                <CardHeader className="p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      {metric.title}
+                    </span>
+                    <Badge variant={metric.badgeVariant} className="text-[10px]">
+                      {metric.status}
+                    </Badge>
+                  </div>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+                      {metric.value}
+                    </span>
+                    <Icon className="ml-auto h-5 w-5 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <CardDescription className="mt-1 text-xs">
+                    {metric.description}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Prominent Discovery Search Area */}
+      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="max-w-2xl">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            Discover Scientific Equipment & Workspaces
+          </h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Search cross-institutional listings or select an apparatus category to check availability.
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <form
+          action="/resources"
+          method="GET"
+          className="mt-4 flex flex-col gap-3 sm:flex-row"
+        >
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              name="q"
+              placeholder="Search oscilloscopes, electron microscopes, laser cutters, cleanrooms..."
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+              aria-label="Search resources"
+            />
+          </div>
+          <Button type="submit" variant="teal" size="md">
+            <span>Search Catalog</span>
+          </Button>
+        </form>
+
+        {/* Category Pills */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <Link
+              key={category}
+              href={`/resources?category=${encodeURIComponent(category)}`}
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              {category}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Recommended / Recently Available Section with Honest Empty State */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between pb-3">
+          <div className="space-y-0.5">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              Recently Available Resources
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Equipment shared by participating member colleges and makerspaces.
+            </p>
+          </div>
+          <Link
+            href="/resources"
+            className="text-xs font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-400"
+          >
+            View all &rarr;
+          </Link>
+        </div>
+
+        <EmptyState
+          icon={<Boxes className="h-6 w-6 text-slate-500" />}
+          title="No live resource listings yet"
+          description="The repository foundation is initialized and awaiting Supabase database connectivity. Verified lab equipment and shared spaces will display here once resources are registered."
+          action={
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/resources">
+                <Button variant="teal" size="sm">
+                  <span>Open Resource Directory</span>
+                </Button>
+              </Link>
+              <Link href="/my-resources">
+                <Button variant="outline" size="sm">
+                  <span>Register First Resource</span>
+                </Button>
+              </Link>
+            </div>
+          }
+        />
+      </div>
+
+      {/* Trust & Custody Lifecycle Workflow */}
+      <div className="mt-12 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+        <div className="max-w-2xl">
+          <Badge variant="teal" className="mb-2">
+            Governance Framework
+          </Badge>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            How ShareGrid Ensures Safe Resource Custody
+          </h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Unlike informal borrowing, every booking follows a structured multi-step verification
+            trail to protect delicate and high-value research assets.
+          </p>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {trustWorkflow.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.step}
+                className="relative rounded-lg border border-slate-100 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-950/40"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/80 dark:text-teal-400">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span className="font-mono text-xs font-bold text-slate-400 dark:text-slate-600">
+                    {item.step}
+                  </span>
+                </div>
+                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {item.title}
+                </h3>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                  {item.desc}
+                </p>
               </div>
-              <CardTitle>{pillar.title}</CardTitle>
-              <CardDescription>{pillar.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
-            </CardContent>
-          </Card>
-        ))}
+            );
+          })}
+        </div>
       </div>
-
-      <div className="mx-auto mt-16 max-w-3xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Engineering Foundation Status
-        </h2>
-        <ul className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-          <li className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Next.js 16 (App Router) + TypeScript Strict Mode initialized</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Tailwind CSS design tokens and accessible UI primitives configured</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Domain-driven, feature-oriented folder structure established</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Supabase integration layer prepared (Browser, Server, Middleware, Admin with RLS security guards)</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Safe environment placeholder configuration (.env.example) documented</span>
-          </li>
-        </ul>
-      </div>
-    </div>
+    </ContentContainer>
   );
 }

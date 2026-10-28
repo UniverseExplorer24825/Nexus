@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
+import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus | Institutional Equipment & Space Sharing",
+  title: "ShareGrid | Trusted Resource Sharing Platform",
   description:
-    "Secure platform enabling institutions, colleges, laboratories, and makerspaces to share equipment and spaces with auditable governance.",
+    "Empowering colleges, institutions, laboratories, and makerspaces to safely share equipment and workspaces with verifiable eligibility and audited custody.",
 };
 
 export default function RootLayout({
@@ -30,10 +29,8 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="min-h-full flex flex-col font-sans">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
