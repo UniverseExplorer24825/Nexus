@@ -1,7 +1,6 @@
 /**
  * Database schema definitions for Supabase integration.
- * This file serves as the type contract and can be regenerated via Supabase CLI
- * (e.g. `supabase gen types typescript`).
+ * Matches the schema generated in supabase/migrations/20261028000001_initial_schema.sql
  */
 
 export type Json =
@@ -12,143 +11,372 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export type UserRole = "member" | "resource_owner" | "institution_admin";
+export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
+export type ResourceStatus = "draft" | "published" | "archived";
+export type BookingStatus =
+  | "requested"
+  | "approved"
+  | "rejected"
+  | "waitlisted"
+  | "checked_out"
+  | "returned"
+  | "completed"
+  | "cancelled";
+export type ConditionStage = "checkout" | "return";
+export type IncidentSeverity = "low" | "medium" | "high" | "critical";
+export type IncidentStatus = "open" | "under_review" | "resolved" | "dismissed";
+export type EligibilityCheckStatus = "pending" | "passed" | "failed";
+
 export interface Database {
   public: {
     Tables: {
-      profiles: {
+      institutions: {
         Row: {
           id: string;
+          name: string;
+          description: string | null;
+          location: string | null;
+          domain: string | null;
           created_at: string;
           updated_at: string;
-          email: string;
-          full_name: string | null;
-          institution_id: string | null;
-          role: "student" | "researcher" | "lab_manager" | "admin";
         };
         Insert: {
-          id: string;
+          id?: string;
+          name: string;
+          description?: string | null;
+          location?: string | null;
+          domain?: string | null;
           created_at?: string;
           updated_at?: string;
-          email: string;
-          full_name?: string | null;
-          institution_id?: string | null;
-          role?: "student" | "researcher" | "lab_manager" | "admin";
         };
         Update: {
           id?: string;
+          name?: string;
+          description?: string | null;
+          location?: string | null;
+          domain?: string | null;
           created_at?: string;
           updated_at?: string;
-          email?: string;
+        };
+      };
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+          institution_id: string | null;
+          role: UserRole;
+          verification_status: VerificationStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
           full_name?: string | null;
+          avatar_url?: string | null;
           institution_id?: string | null;
-          role?: "student" | "researcher" | "lab_manager" | "admin";
+          role?: UserRole;
+          verification_status?: VerificationStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          institution_id?: string | null;
+          role?: UserRole;
+          verification_status?: VerificationStatus;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       resources: {
         Row: {
           id: string;
+          owner_id: string;
+          institution_id: string | null;
+          title: string;
+          description: string | null;
+          category: string;
+          location: string | null;
+          images: Json;
+          eligibility_requirements: string | null;
+          usage_rules: string | null;
+          deposit_amount: number;
+          currency: string;
+          status: ResourceStatus;
           created_at: string;
           updated_at: string;
-          name: string;
-          category: string;
-          description: string | null;
-          institution_id: string;
-          owner_id: string;
-          is_available: boolean;
-          location: string | null;
         };
         Insert: {
           id?: string;
+          owner_id: string;
+          institution_id?: string | null;
+          title: string;
+          description?: string | null;
+          category: string;
+          location?: string | null;
+          images?: Json;
+          eligibility_requirements?: string | null;
+          usage_rules?: string | null;
+          deposit_amount?: number;
+          currency?: string;
+          status?: ResourceStatus;
           created_at?: string;
           updated_at?: string;
-          name: string;
-          category: string;
-          description?: string | null;
-          institution_id: string;
-          owner_id: string;
-          is_available?: boolean;
-          location?: string | null;
         };
         Update: {
           id?: string;
+          owner_id?: string;
+          institution_id?: string | null;
+          title?: string;
+          description?: string | null;
+          category?: string;
+          location?: string | null;
+          images?: Json;
+          eligibility_requirements?: string | null;
+          usage_rules?: string | null;
+          deposit_amount?: number;
+          currency?: string;
+          status?: ResourceStatus;
           created_at?: string;
           updated_at?: string;
-          name?: string;
-          category?: string;
-          description?: string | null;
-          institution_id?: string;
-          owner_id?: string;
-          is_available?: boolean;
-          location?: string | null;
+        };
+      };
+      resource_availability: {
+        Row: {
+          id: string;
+          resource_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          resource_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          resource_id?: string;
+          day_of_week?: number;
+          start_time?: string;
+          end_time?: string;
+          created_at?: string;
         };
       };
       bookings: {
         Row: {
           id: string;
+          resource_id: string;
+          borrower_id: string;
+          start_time: string;
+          end_time: string;
+          status: BookingStatus;
+          request_notes: string | null;
+          decision_by: string | null;
+          decision_at: string | null;
+          decision_notes: string | null;
           created_at: string;
           updated_at: string;
-          resource_id: string;
-          requester_id: string;
-          start_time: string;
-          end_time: string;
-          status: "pending" | "approved" | "rejected" | "checked_out" | "returned" | "cancelled";
-          purpose: string | null;
         };
         Insert: {
           id?: string;
-          created_at?: string;
-          updated_at?: string;
           resource_id: string;
-          requester_id: string;
+          borrower_id: string;
           start_time: string;
           end_time: string;
-          status?: "pending" | "approved" | "rejected" | "checked_out" | "returned" | "cancelled";
-          purpose?: string | null;
+          status?: BookingStatus;
+          request_notes?: string | null;
+          decision_by?: string | null;
+          decision_at?: string | null;
+          decision_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
-          created_at?: string;
-          updated_at?: string;
           resource_id?: string;
-          requester_id?: string;
+          borrower_id?: string;
           start_time?: string;
           end_time?: string;
-          status?: "pending" | "approved" | "rejected" | "checked_out" | "returned" | "cancelled";
-          purpose?: string | null;
+          status?: BookingStatus;
+          request_notes?: string | null;
+          decision_by?: string | null;
+          decision_at?: string | null;
+          decision_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
-      audit_logs: {
+      eligibility_checks: {
         Row: {
           id: string;
+          booking_id: string;
+          requirement: string;
+          status: EligibilityCheckStatus;
+          reviewer_id: string | null;
+          review_notes: string | null;
+          reviewed_at: string | null;
           created_at: string;
-          entity_type: string;
-          entity_id: string;
-          actor_id: string;
-          action: string;
-          details: Json | null;
+          updated_at: string;
         };
         Insert: {
           id?: string;
+          booking_id: string;
+          requirement: string;
+          status?: EligibilityCheckStatus;
+          reviewer_id?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
           created_at?: string;
-          entity_type: string;
-          entity_id: string;
-          actor_id: string;
-          action: string;
-          details?: Json | null;
+          updated_at?: string;
         };
         Update: {
           id?: string;
+          booking_id?: string;
+          requirement?: string;
+          status?: EligibilityCheckStatus;
+          reviewer_id?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
           created_at?: string;
-          entity_type?: string;
-          entity_id?: string;
-          actor_id?: string;
-          action?: string;
-          details?: Json | null;
+          updated_at?: string;
+        };
+      };
+      condition_reports: {
+        Row: {
+          id: string;
+          booking_id: string;
+          stage: ConditionStage;
+          notes: string;
+          photos: Json;
+          reporter_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          booking_id: string;
+          stage: ConditionStage;
+          notes: string;
+          photos?: Json;
+          reporter_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string;
+          stage?: ConditionStage;
+          notes?: string;
+          photos?: Json;
+          reporter_id?: string;
+          created_at?: string;
+        };
+      };
+      incidents: {
+        Row: {
+          id: string;
+          booking_id: string;
+          reporter_id: string;
+          incident_type: string;
+          description: string;
+          severity: IncidentSeverity;
+          status: IncidentStatus;
+          reviewer_id: string | null;
+          resolution_notes: string | null;
+          resolved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          booking_id: string;
+          reporter_id: string;
+          incident_type: string;
+          description: string;
+          severity?: IncidentSeverity;
+          status?: IncidentStatus;
+          reviewer_id?: string | null;
+          resolution_notes?: string | null;
+          resolved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string;
+          reporter_id?: string;
+          incident_type?: string;
+          description?: string;
+          severity?: IncidentSeverity;
+          status?: IncidentStatus;
+          reviewer_id?: string | null;
+          resolution_notes?: string | null;
+          resolved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      activity_logs: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          resource_id: string | null;
+          booking_id: string | null;
+          action_type: string;
+          details: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          actor_id?: string | null;
+          resource_id?: string | null;
+          booking_id?: string | null;
+          action_type: string;
+          details?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          actor_id?: string | null;
+          resource_id?: string | null;
+          booking_id?: string | null;
+          action_type?: string;
+          details?: Json;
+          created_at?: string;
         };
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Functions: {
+      is_admin: {
+        Args: { check_user_id: string };
+        Returns: boolean;
+      };
+      is_resource_owner: {
+        Args: { check_resource_id: string; check_user_id: string };
+        Returns: boolean;
+      };
+      is_booking_participant: {
+        Args: { check_booking_id: string; check_user_id: string };
+        Returns: boolean;
+      };
+    };
+    Enums: {
+      user_role: UserRole;
+      verification_status: VerificationStatus;
+      resource_status: ResourceStatus;
+      booking_status: BookingStatus;
+      condition_stage: ConditionStage;
+      incident_severity: IncidentSeverity;
+      incident_status: IncidentStatus;
+      eligibility_check_status: EligibilityCheckStatus;
+    };
   };
 }

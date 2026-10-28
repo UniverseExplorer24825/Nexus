@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./nav-config";
 import { BrandLogo } from "./brand-logo";
 import { Badge } from "@/components/ui/badge";
+import { UserNavCard } from "./user-nav-card";
 import { Menu, X, Building2 } from "lucide-react";
 
 function MobileNavLinks({ onClose }: { onClose: () => void }) {
@@ -134,6 +135,12 @@ export function MobileNav() {
         <React.Suspense fallback={<MobileNavFallback />}>
           <MobileNavLinks onClose={handleClose} />
         </React.Suspense>
+
+        <div className="p-3 border-t border-slate-100 dark:border-slate-900">
+          <React.Suspense fallback={<div className="h-14 bg-slate-100 rounded-lg animate-pulse" />}>
+            <UserNavCard />
+          </React.Suspense>
+        </div>
       </div>
     </header>
   );

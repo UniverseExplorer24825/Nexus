@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./nav-config";
 import { BrandLogo } from "./brand-logo";
 import { Badge } from "@/components/ui/badge";
+import { UserNavCard } from "./user-nav-card";
 import { Building2, ShieldCheck } from "lucide-react";
 
 function SidebarNavLinks() {
@@ -106,6 +107,13 @@ export function Sidebar() {
       <React.Suspense fallback={<SidebarNavFallback />}>
         <SidebarNavLinks />
       </React.Suspense>
+
+      {/* User Authentication Status Card */}
+      <div className="px-3 py-2 border-t border-slate-100 dark:border-slate-900">
+        <React.Suspense fallback={<div className="h-14 bg-slate-100 rounded-lg animate-pulse" />}>
+          <UserNavCard />
+        </React.Suspense>
+      </div>
 
       {/* Trust & Safety Guarantee Footer */}
       <div className="border-t border-slate-100 p-4 dark:border-slate-900">
