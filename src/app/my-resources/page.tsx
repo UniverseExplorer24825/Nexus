@@ -25,7 +25,7 @@ export default function MyResourcesPage() {
         <EmptyState
           icon={<Boxes className="h-6 w-6 text-slate-500" />}
           title="No resources registered yet"
-          description="Your laboratory or department has not published any equipment or spaces to the ShareGrid network. Resource listing and management workflows will be available in the upcoming milestone."
+          description="Your laboratory or department has not published any equipment or spaces to the Nexus network. Resource listing and management workflows will be available in the upcoming milestone."
           action={
             <Link href="/">
               <Button variant="outline" size="sm">

@@ -11,7 +11,7 @@ export function BrandLogo({ className, showSubtitle = false }: BrandLogoProps) {
     <Link
       href="/"
       className={cn("group flex items-center gap-3 transition-opacity hover:opacity-90", className)}
-      aria-label="ShareGrid Home"
+      aria-label="Nexus Home"
     >
       {/* Brand Icon: Interlocking geometric grid mark with navy and teal */}
       <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-teal-400 shadow-sm ring-1 ring-white/10 dark:bg-slate-800">
@@ -35,7 +35,7 @@ export function BrandLogo({ className, showSubtitle = false }: BrandLogoProps) {
 
       <div className="flex flex-col">
         <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          ShareGrid
+          Nexus
         </span>
         {showSubtitle && (
           <span className="text-[11px] font-medium tracking-normal text-slate-500 dark:text-slate-400">

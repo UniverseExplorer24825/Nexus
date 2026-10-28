@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ShareGrid | Trusted Resource Sharing Platform",
+  title: "Nexus | Trusted Resource Sharing Platform",
   description:
     "Empowering colleges, institutions, laboratories, and makerspaces to safely share equipment and workspaces with verifiable eligibility and audited custody.",
 };

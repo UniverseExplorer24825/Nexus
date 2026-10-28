@@ -137,14 +137,14 @@ export default function OverviewPage() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-teal-600" />
               <span className="text-xs font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">
-                Welcome to ShareGrid
+                Welcome to Nexus
               </span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Trusted Institutional Equipment & Space Sharing
             </h2>
             <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-              ShareGrid enables universities, colleges, laboratories, and makerspaces to share
+              Nexus enables universities, colleges, laboratories, and makerspaces to share
               underutilized equipment, computing clusters, and specialized testing facilities
               safely. Every transaction is governed by eligibility verification, custodian approval,
               and auditable condition logs.
@@ -300,7 +300,7 @@ export default function OverviewPage() {
             Governance Framework
           </Badge>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            How ShareGrid Ensures Safe Resource Custody
+            How Nexus Ensures Safe Resource Custody
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Unlike informal borrowing, every booking follows a structured multi-step verification
