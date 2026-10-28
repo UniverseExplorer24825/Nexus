@@ -1,5 +1,43 @@
 import { createClient } from "@/lib/supabase/server";
-import type { BookingWithRelations, DbBooking } from "../types";
+import type { BookingWithRelations, DbBooking, DbNotification } from "../types";
+
+/**
+ * Computes accurate overdue metadata based on end_time and current timestamp.
+ */
+export function computeOverdueMetadata(booking: BookingWithRelations): BookingWithRelations {
+  if (booking.status === "checked_out") {
+    const end = new Date(booking.end_time).getTime();
+    const now = Date.now();
+    if (now > end) {
+      const diffMs = now - end;
+      const diffMins = Math.floor(diffMs / (60 * 1000));
+      const diffHours = Math.floor(diffMins / 60);
+      const remainingMins = diffMins % 60;
+      const diffDays = Math.floor(diffHours / 24);
+
+      let text = "";
+      if (diffDays > 0) {
+        text = `Overdue by ${diffDays}d ${diffHours % 24}h`;
+      } else if (diffHours > 0) {
+        text = `Overdue by ${diffHours}h ${remainingMins}m`;
+      } else {
+        text = `Overdue by ${diffMins}m`;
+      }
+
+      return {
+        ...booking,
+        is_overdue: true,
+        overdue_duration_text: text,
+      };
+    }
+  }
+
+  return {
+    ...booking,
+    is_overdue: false,
+    overdue_duration_text: null,
+  };
+}
 
 /**
  * Retrieves all bookings requested or held by a specific borrower.
@@ -37,7 +75,9 @@ export async function getMyBookings(
         id,
         full_name
       ),
-      eligibility_checks (*)
+      eligibility_checks (*),
+      condition_reports (*),
+      incidents (*)
     `
     )
     .eq("borrower_id", userId);
@@ -45,6 +85,8 @@ export async function getMyBookings(
   if (statusFilter && statusFilter !== "all") {
     if (statusFilter === "active") {
       query = query.in("status", ["approved", "checked_out"]);
+    } else if (statusFilter === "overdue") {
+      query = query.eq("status", "checked_out").lt("end_time", new Date().toISOString());
     } else if (statusFilter === "history") {
       query = query.in("status", ["completed", "returned", "rejected", "cancelled"]);
     } else {
@@ -61,7 +103,7 @@ export async function getMyBookings(
     return [];
   }
 
-  const rawBookings = data as BookingWithRelations[];
+  const rawBookings = (data as BookingWithRelations[]).map(computeOverdueMetadata);
 
   // Compute dynamic waiting-list position for any waitlisted items
   const bookingsWithPositions = await Promise.all(
@@ -84,7 +126,7 @@ export async function getMyBookings(
 }
 
 /**
- * Retrieves bookings awaiting authorization for resources managed by the current custodian.
+ * Retrieves bookings awaiting authorization or inspection for resources managed by the current custodian.
  */
 export async function getManagedApprovals(
   userId: string,
@@ -131,7 +173,9 @@ export async function getManagedApprovals(
         id,
         full_name
       ),
-      eligibility_checks (*)
+      eligibility_checks (*),
+      condition_reports (*),
+      incidents (*)
     `
     )
     .in("resource_id", resourceIds);
@@ -139,11 +183,20 @@ export async function getManagedApprovals(
   if (statusFilter === "pending") {
     query = query.eq("status", "requested");
     query = query.order("created_at", { ascending: true });
+  } else if (statusFilter === "inspection") {
+    query = query.eq("status", "returned");
+    query = query.order("updated_at", { ascending: false });
+  } else if (statusFilter === "active") {
+    query = query.in("status", ["approved", "checked_out"]);
+    query = query.order("start_time", { ascending: true });
+  } else if (statusFilter === "overdue") {
+    query = query.eq("status", "checked_out").lt("end_time", new Date().toISOString());
+    query = query.order("end_time", { ascending: true });
   } else if (statusFilter === "waitlist") {
     query = query.eq("status", "waitlisted");
     query = query.order("created_at", { ascending: true });
   } else if (statusFilter === "decided") {
-    query = query.in("status", ["approved", "rejected"]);
+    query = query.in("status", ["approved", "rejected", "completed"]);
     query = query.order("updated_at", { ascending: false });
   } else if (statusFilter !== "all") {
     query = query.eq("status", statusFilter);
@@ -159,7 +212,7 @@ export async function getManagedApprovals(
     return [];
   }
 
-  const rawBookings = data as BookingWithRelations[];
+  const rawBookings = (data as BookingWithRelations[]).map(computeOverdueMetadata);
 
   // Attach waitlist order
   const results = await Promise.all(
@@ -217,7 +270,9 @@ export async function getBookingById(
         id,
         full_name
       ),
-      eligibility_checks (*)
+      eligibility_checks (*),
+      condition_reports (*),
+      incidents (*)
     `
     )
     .eq("id", bookingId)
@@ -227,7 +282,7 @@ export async function getBookingById(
     return null;
   }
 
-  const booking = data as BookingWithRelations;
+  let booking = computeOverdueMetadata(data as BookingWithRelations);
 
   // Authorization check
   const isBorrower = booking.borrower_id === currentUserId;
@@ -245,7 +300,7 @@ export async function getBookingById(
       .eq("status", "waitlisted")
       .lte("created_at", booking.created_at);
 
-    booking.waitlist_position = count || 1;
+    booking = { ...booking, waitlist_position: count || 1 };
   }
 
   return booking;
@@ -290,9 +345,14 @@ export async function checkResourceConflict(
 }
 
 /**
- * Retrieves the count of pending booking requests for a user's owned resources.
+ * Retrieves counts for custodian summary tabs.
  */
-export async function getPendingApprovalsCount(userId: string): Promise<number> {
+export async function getCustodianActionCounts(userId: string): Promise<{
+  pendingRequests: number;
+  awaitingInspection: number;
+  activeLoans: number;
+  overdueLoans: number;
+}> {
   const supabase = await createClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST select query
@@ -301,17 +361,96 @@ export async function getPendingApprovalsCount(userId: string): Promise<number> 
     .eq("owner_id", userId);
 
   if (!ownedResources || ownedResources.length === 0) {
-    return 0;
+    return { pendingRequests: 0, awaitingInspection: 0, activeLoans: 0, overdueLoans: 0 };
   }
 
   const resourceIds = ownedResources.map((r: { id: string }) => r.id);
+  const nowIso = new Date().toISOString();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST count query
-  const { count, error } = await (supabase.from("bookings") as any)
-    .select("id", { count: "exact", head: true })
-    .in("resource_id", resourceIds)
-    .eq("status", "requested");
+  const [
+    { count: pendingCount },
+    { count: inspectionCount },
+    { count: activeCount },
+    { count: overdueCount },
+  ] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("bookings") as any)
+      .select("id", { count: "exact", head: true })
+      .in("resource_id", resourceIds)
+      .eq("status", "requested"),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("bookings") as any)
+      .select("id", { count: "exact", head: true })
+      .in("resource_id", resourceIds)
+      .eq("status", "returned"),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("bookings") as any)
+      .select("id", { count: "exact", head: true })
+      .in("resource_id", resourceIds)
+      .in("status", ["approved", "checked_out"]),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("bookings") as any)
+      .select("id", { count: "exact", head: true })
+      .in("resource_id", resourceIds)
+      .eq("status", "checked_out")
+      .lt("end_time", nowIso),
+  ]);
 
-  if (error) return 0;
-  return count || 0;
+  return {
+    pendingRequests: pendingCount || 0,
+    awaitingInspection: inspectionCount || 0,
+    activeLoans: activeCount || 0,
+    overdueLoans: overdueCount || 0,
+  };
+}
+
+/**
+ * Retrieves the count of pending booking requests for a user's owned resources.
+ */
+export async function getPendingApprovalsCount(userId: string): Promise<number> {
+  const { pendingRequests } = await getCustodianActionCounts(userId);
+  return pendingRequests;
+}
+
+/**
+ * Retrieves unread notifications for a user.
+ */
+export async function getUserNotifications(userId: string): Promise<DbNotification[]> {
+  const supabase = await createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST select query
+  const { data, error } = await (supabase.from("notifications") as any)
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error || !data) return [];
+  return data as DbNotification[];
+}
+
+/**
+ * Creates an in-app notification record for important lifecycle milestones.
+ */
+export async function sendInAppNotification(
+  userId: string,
+  title: string,
+  message: string,
+  category: string,
+  bookingId?: string
+): Promise<void> {
+  try {
+    const supabase = await createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST insert query
+    await (supabase.from("notifications") as any).insert({
+      user_id: userId,
+      title,
+      message,
+      category,
+      booking_id: bookingId || null,
+      is_read: false,
+    });
+  } catch (err) {
+    console.warn("[BookingService] Notification creation notice:", err);
+  }
 }

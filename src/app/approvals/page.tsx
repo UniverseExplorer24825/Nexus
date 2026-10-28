@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/auth";
-import { getManagedApprovals, getPendingApprovalsCount } from "@/features/bookings/services/booking-service";
+import { getManagedApprovals, getCustodianActionCounts } from "@/features/bookings/services/booking-service";
 import { ApprovalCard } from "@/features/bookings/components/approval-card";
 import { ContentContainer } from "@/components/ui/content-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -17,6 +17,9 @@ import {
   Layers,
   LogIn,
   PlusCircle,
+  ClipboardCheck,
+  AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 
 interface ApprovalsPageProps {
@@ -45,21 +48,42 @@ async function ApprovalsContent({ searchParams }: ApprovalsPageProps) {
     );
   }
 
-  const [bookings, pendingCount] = await Promise.all([
+  const [bookings, counts] = await Promise.all([
     getManagedApprovals(user.id, statusFilter),
-    getPendingApprovalsCount(user.id),
+    getCustodianActionCounts(user.id),
   ]);
 
   const filterTabs = [
     {
-      label: `Pending Action (${pendingCount})`,
+      label: `Pending Action (${counts.pendingRequests})`,
       value: "pending",
       icon: Clock,
-      highlight: pendingCount > 0,
+      highlight: counts.pendingRequests > 0,
+      highlightColor: "amber",
     },
-    { label: "Waitlist Queue", value: "waitlist", icon: Clock3 },
-    { label: "Decision History", value: "decided", icon: History },
-    { label: "All Requests", value: "all", icon: CheckSquare },
+    {
+      label: `Awaiting Inspection (${counts.awaitingInspection})`,
+      value: "inspection",
+      icon: ClipboardCheck,
+      highlight: counts.awaitingInspection > 0,
+      highlightColor: "amber",
+    },
+    {
+      label: `Overdue Loans (${counts.overdueLoans})`,
+      value: "overdue",
+      icon: AlertCircle,
+      highlight: counts.overdueLoans > 0,
+      highlightColor: "rose",
+    },
+    {
+      label: `Active Loans (${counts.activeLoans})`,
+      value: "active",
+      icon: ShieldCheck,
+      highlight: false,
+    },
+    { label: "Waitlist Queue", value: "waitlist", icon: Clock3, highlight: false },
+    { label: "Decision History", value: "decided", icon: History, highlight: false },
+    { label: "All Requests", value: "all", icon: CheckSquare, highlight: false },
   ];
 
   return (
@@ -76,6 +100,8 @@ async function ApprovalsContent({ searchParams }: ApprovalsPageProps) {
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                 isActive
                   ? "bg-teal-600 text-white shadow-xs dark:bg-teal-700"
+                  : tab.highlight && tab.highlightColor === "rose"
+                  ? "bg-rose-100 text-rose-900 hover:bg-rose-200 dark:bg-rose-950/60 dark:text-rose-200"
                   : tab.highlight
                   ? "bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-200"
                   : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"

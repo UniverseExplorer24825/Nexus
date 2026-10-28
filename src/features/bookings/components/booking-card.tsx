@@ -59,6 +59,13 @@ export function BookingCard({ booking }: BookingCardProps) {
 
   // Status Badge Configuration
   const getStatusBadge = () => {
+    if (booking.is_overdue) {
+      return (
+        <Badge variant="danger" className="text-xs">
+          Overdue by {booking.overdue_duration_text}
+        </Badge>
+      );
+    }
     switch (booking.status) {
       case "approved":
         return <Badge variant="teal">Approved — Ready for Handover</Badge>;
@@ -72,6 +79,8 @@ export function BookingCard({ booking }: BookingCardProps) {
         return <Badge variant="warning">Awaiting Custodian Review</Badge>;
       case "checked_out":
         return <Badge variant="teal">In Custody</Badge>;
+      case "returned":
+        return <Badge variant="warning">Returned — Inspection Pending</Badge>;
       case "rejected":
         return <Badge variant="danger">Declined</Badge>;
       case "cancelled":
@@ -225,9 +234,21 @@ export function BookingCard({ booking }: BookingCardProps) {
             </span>
 
             <div className="flex items-center gap-2">
+              <Link href={`/bookings/${booking.id}`}>
+                <Button variant="teal" size="sm">
+                  <span>
+                    {booking.status === "approved"
+                      ? "Checkout"
+                      : booking.status === "checked_out"
+                      ? "Return"
+                      : "View Details"}
+                  </span>
+                </Button>
+              </Link>
+
               <Link href={`/resources/${booking.resource_id}`}>
                 <Button variant="ghost" size="sm">
-                  <span>View Apparatus</span>
+                  <span>Apparatus</span>
                 </Button>
               </Link>
 
@@ -239,7 +260,7 @@ export function BookingCard({ booking }: BookingCardProps) {
                   onClick={handleCancel}
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                 >
-                  <span>Cancel Request</span>
+                  <span>Cancel</span>
                 </Button>
               )}
             </div>

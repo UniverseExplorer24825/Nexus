@@ -17,6 +17,7 @@ import {
   Clock3,
   ChevronDown,
   ChevronUp,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface ApprovalCardProps {
@@ -104,6 +105,11 @@ export function ApprovalCard({ booking }: ApprovalCardProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {booking.is_overdue && (
+              <Badge variant="danger" className="text-xs">
+                Overdue ({booking.overdue_duration_text})
+              </Badge>
+            )}
             {booking.status === "requested" && (
               <Badge variant="warning">Pending Review</Badge>
             )}
@@ -114,6 +120,15 @@ export function ApprovalCard({ booking }: ApprovalCardProps) {
             )}
             {booking.status === "approved" && (
               <Badge variant="teal">Authorized & Confirmed</Badge>
+            )}
+            {booking.status === "checked_out" && (
+              <Badge variant="teal">In Custody</Badge>
+            )}
+            {booking.status === "returned" && (
+              <Badge variant="warning">Returned — Inspection Pending</Badge>
+            )}
+            {booking.status === "completed" && (
+              <Badge variant="success">Completed</Badge>
             )}
             {booking.status === "rejected" && (
               <Badge variant="danger">Declined</Badge>
@@ -370,19 +385,36 @@ export function ApprovalCard({ booking }: ApprovalCardProps) {
         </CardFooter>
       )}
 
-      {/* Past Decision Metadata if decided */}
-      {!isDecidable && booking.decision_at && (
+      {/* Past Decision Metadata & Lifecycle Management Link */}
+      {!isDecidable && (
         <CardFooter className="p-4 py-2.5 text-xs text-slate-500 bg-slate-50 border-t border-slate-100 dark:bg-slate-900/50 dark:border-slate-800">
           <div className="flex flex-wrap items-center justify-between w-full gap-2">
-            <span>
-              Decided on {formatDate(booking.decision_at)}
-              {booking.decision_reviewer && ` by ${booking.decision_reviewer.full_name}`}
-            </span>
-            {booking.decision_notes && (
-              <span className="italic text-slate-600 dark:text-slate-400">
-                &ldquo;{booking.decision_notes}&rdquo;
-              </span>
-            )}
+            <div>
+              {booking.decision_at && (
+                <span>
+                  Decided on {formatDate(booking.decision_at)}
+                  {booking.decision_reviewer && ` by ${booking.decision_reviewer.full_name}`}
+                </span>
+              )}
+              {booking.decision_notes && (
+                <span className="italic text-slate-600 dark:text-slate-400 block sm:inline sm:ml-2">
+                  &ldquo;{booking.decision_notes}&rdquo;
+                </span>
+              )}
+            </div>
+
+            <Link href={`/bookings/${booking.id}`}>
+              <Button variant="teal" size="sm">
+                <ClipboardCheck className="h-3.5 w-3.5 mr-1" />
+                <span>
+                  {booking.status === "returned"
+                    ? "Inspect Return"
+                    : booking.status === "checked_out"
+                    ? "View Active Loan"
+                    : "View Reservation Dossier"}
+                </span>
+              </Button>
+            </Link>
           </div>
         </CardFooter>
       )}

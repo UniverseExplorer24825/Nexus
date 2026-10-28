@@ -41,10 +41,12 @@ async function MyBookingsContent({ searchParams }: MyBookingsPageProps) {
 
   const filterTabs = [
     { label: "All Reservations", value: "all", icon: CalendarCheck },
+    { label: "Active Loans", value: "active", icon: CheckCircle2 },
+    { label: "Overdue", value: "overdue", icon: Clock },
     { label: "Pending Review", value: "requested", icon: Clock },
-    { label: "Approved", value: "approved", icon: CheckCircle2 },
+    { label: "Approved Handover", value: "approved", icon: CheckCircle2 },
     { label: "Waitlisted", value: "waitlisted", icon: Clock },
-    { label: "History & Cancelled", value: "history", icon: History },
+    { label: "History & Past", value: "history", icon: History },
   ];
 
   return (

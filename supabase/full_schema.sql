@@ -762,3 +762,86 @@ CREATE TRIGGER trg_init_booking_eligibility
   AFTER INSERT ON public.bookings
   FOR EACH ROW
   EXECUTE FUNCTION public.initialize_booking_eligibility();
+
+-- 11. CHECKOUT, RETURN, CONDITION INSPECTIONS & INCIDENTS (Migration 6)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'condition-photos',
+  'condition-photos',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp'];
+
+DROP POLICY IF EXISTS "Public or participants can view condition photos" ON storage.objects;
+CREATE POLICY "Public or participants can view condition photos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'condition-photos');
+
+DROP POLICY IF EXISTS "Authenticated users can upload condition photos" ON storage.objects;
+CREATE POLICY "Authenticated users can upload condition photos"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'condition-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DO $$ BEGIN
+  ALTER TABLE public.condition_reports
+    ADD COLUMN IF NOT EXISTS resource_id UUID REFERENCES public.resources(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS issues_flagged BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS issue_types TEXT[] DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS safety_acknowledged BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN IF NOT EXISTS late_minutes INT NOT NULL DEFAULT 0;
+EXCEPTION
+  WHEN duplicate_column THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_condition_reports_booking_stage
+  ON public.condition_reports(booking_id, stage);
+
+DO $$ BEGIN
+  ALTER TABLE public.incidents
+    ADD COLUMN IF NOT EXISTS resource_id UUID REFERENCES public.resources(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS photos JSONB NOT NULL DEFAULT '[]'::jsonb;
+EXCEPTION
+  WHEN duplicate_column THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_incidents_status ON public.incidents(status);
+CREATE INDEX IF NOT EXISTS idx_incidents_resource ON public.incidents(resource_id);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'booking',
+  booking_id UUID REFERENCES public.bookings(id) ON DELETE CASCADE,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_lookup
+  ON public.notifications(user_id, is_read, created_at DESC);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can read own notifications" ON public.notifications;
+CREATE POLICY "Users can read own notifications"
+  ON public.notifications FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Users can mark own notifications read" ON public.notifications;
+CREATE POLICY "Users can mark own notifications read"
+  ON public.notifications FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());

@@ -264,28 +264,61 @@ export interface Database {
         Row: {
           id: string;
           booking_id: string;
+          resource_id: string | null;
           stage: ConditionStage;
           notes: string;
           photos: Json;
           reporter_id: string;
+          issues_flagged: boolean;
+          issue_types: string[];
+          safety_acknowledged: boolean;
+          is_late: boolean;
+          late_minutes: number;
+          review_status?: string | null;
+          reviewer_id?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reported_at?: string;
           created_at: string;
         };
         Insert: {
           id?: string;
           booking_id: string;
+          resource_id?: string | null;
           stage: ConditionStage;
           notes: string;
           photos?: Json;
           reporter_id: string;
+          issues_flagged?: boolean;
+          issue_types?: string[];
+          safety_acknowledged?: boolean;
+          is_late?: boolean;
+          late_minutes?: number;
+          review_status?: string | null;
+          reviewer_id?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reported_at?: string;
           created_at?: string;
         };
         Update: {
           id?: string;
           booking_id?: string;
+          resource_id?: string | null;
           stage?: ConditionStage;
           notes?: string;
           photos?: Json;
           reporter_id?: string;
+          issues_flagged?: boolean;
+          issue_types?: string[];
+          safety_acknowledged?: boolean;
+          is_late?: boolean;
+          late_minutes?: number;
+          review_status?: string | null;
+          reviewer_id?: string | null;
+          review_notes?: string | null;
+          reviewed_at?: string | null;
+          reported_at?: string;
           created_at?: string;
         };
       };
@@ -293,11 +326,13 @@ export interface Database {
         Row: {
           id: string;
           booking_id: string;
+          resource_id: string | null;
           reporter_id: string;
           incident_type: string;
           description: string;
           severity: IncidentSeverity;
           status: IncidentStatus;
+          photos: Json;
           reviewer_id: string | null;
           resolution_notes: string | null;
           resolved_at: string | null;
@@ -307,11 +342,13 @@ export interface Database {
         Insert: {
           id?: string;
           booking_id: string;
+          resource_id?: string | null;
           reporter_id: string;
           incident_type: string;
           description: string;
           severity?: IncidentSeverity;
           status?: IncidentStatus;
+          photos?: Json;
           reviewer_id?: string | null;
           resolution_notes?: string | null;
           resolved_at?: string | null;
@@ -321,16 +358,50 @@ export interface Database {
         Update: {
           id?: string;
           booking_id?: string;
+          resource_id?: string | null;
           reporter_id?: string;
           incident_type?: string;
           description?: string;
           severity?: IncidentSeverity;
           status?: IncidentStatus;
+          photos?: Json;
           reviewer_id?: string | null;
           resolution_notes?: string | null;
           resolved_at?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          message: string;
+          category: string;
+          booking_id: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          message: string;
+          category?: string;
+          booking_id?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          message?: string;
+          category?: string;
+          booking_id?: string | null;
+          is_read?: boolean;
+          created_at?: string;
         };
       };
       activity_logs: {
