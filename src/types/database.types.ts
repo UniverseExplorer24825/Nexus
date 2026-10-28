@@ -14,6 +14,13 @@ export type Json =
 export type UserRole = "member" | "resource_owner" | "institution_admin";
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
 export type ResourceStatus = "draft" | "published" | "archived";
+export type ResourceType =
+  | "equipment"
+  | "laboratory"
+  | "workspace"
+  | "meeting_room"
+  | "classroom"
+  | "other";
 export type BookingStatus =
   | "requested"
   | "approved"
@@ -100,6 +107,7 @@ export interface Database {
           title: string;
           description: string | null;
           category: string;
+          resource_type: ResourceType;
           location: string | null;
           images: Json;
           eligibility_requirements: string | null;
@@ -117,6 +125,7 @@ export interface Database {
           title: string;
           description?: string | null;
           category: string;
+          resource_type?: ResourceType;
           location?: string | null;
           images?: Json;
           eligibility_requirements?: string | null;
@@ -134,6 +143,7 @@ export interface Database {
           title?: string;
           description?: string | null;
           category?: string;
+          resource_type?: ResourceType;
           location?: string | null;
           images?: Json;
           eligibility_requirements?: string | null;

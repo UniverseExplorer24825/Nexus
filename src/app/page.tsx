@@ -1,3 +1,4 @@
+import * as React from "react";
 import Link from "next/link";
 import { ContentContainer } from "@/components/ui/content-container";
 import { PageHeader } from "@/components/layout/page-header";
@@ -5,6 +6,12 @@ import { Card, CardHeader, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ResourceCard } from "@/features/resources/components/resource-card";
+import {
+  getResources,
+  getPublishedResourceCount,
+} from "@/features/resources/services/resource-service";
 import {
   Search,
   PlusCircle,
@@ -21,15 +28,20 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export default function OverviewPage() {
+async function OverviewContent() {
+  const [{ resources: recentResources }, publishedCount] = await Promise.all([
+    getResources({ limit: 4, sort: "newest" }),
+    getPublishedResourceCount(),
+  ]);
+
   const summaryMetrics = [
     {
       title: "Available Resources",
-      value: "0",
-      status: "Awaiting Database",
+      value: publishedCount.toString(),
+      status: publishedCount > 0 ? "Catalog Active" : "Awaiting Listings",
       description: "Apparatus & spaces ready for booking",
       icon: Boxes,
-      badgeVariant: "neutral" as const,
+      badgeVariant: (publishedCount > 0 ? "teal" : "neutral") as "teal" | "neutral",
     },
     {
       title: "Pending Bookings",
@@ -53,7 +65,7 @@ export default function OverviewPage() {
       status: "Up to Date",
       description: "Action items for your listed items",
       icon: FileCheck,
-      badgeVariant: "teal" as const,
+      badgeVariant: "neutral" as const,
     },
   ];
 
@@ -106,7 +118,7 @@ export default function OverviewPage() {
   ];
 
   return (
-    <ContentContainer>
+    <div className="space-y-8">
       {/* Page Header */}
       <PageHeader
         title="Institutional Resource Overview"
@@ -120,7 +132,7 @@ export default function OverviewPage() {
                 <span>Explore Directory</span>
               </Button>
             </Link>
-            <Link href="/my-resources">
+            <Link href="/my-resources/new">
               <Button variant="outline" size="sm">
                 <PlusCircle className="h-4 w-4" />
                 <span>List a Resource</span>
@@ -131,7 +143,7 @@ export default function OverviewPage() {
       />
 
       {/* Welcome & Mission Section */}
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -154,27 +166,27 @@ export default function OverviewPage() {
           <div className="flex shrink-0 items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="text-right">
               <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                Institutional Member
+                Institutional Consortium
               </p>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Consortium Sandbox
+                TechCircuit Network
               </p>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 font-bold text-xs text-white dark:bg-slate-700">
-              IM
+              NX
             </div>
           </div>
         </div>
       </div>
 
       {/* Summary Metrics */}
-      <div className="mt-8">
+      <div>
         <div className="flex items-center justify-between pb-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             System Activity Summary
           </h2>
           <span className="text-xs text-slate-400">
-            Live metrics will populate after database connection
+            {publishedCount} published resources indexed
           </span>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,7 +220,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Prominent Discovery Search Area */}
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="max-w-2xl">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             Discover Scientific Equipment & Workspaces
@@ -228,7 +240,7 @@ export default function OverviewPage() {
             <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              name="q"
+              name="query"
               placeholder="Search oscilloscopes, electron microscopes, laser cutters, cleanrooms..."
               className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
               aria-label="Search resources"
@@ -253,15 +265,15 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Recommended / Recently Available Section with Honest Empty State */}
-      <div className="mt-8">
+      {/* Recommended / Recently Available Section */}
+      <div>
         <div className="flex items-center justify-between pb-3">
           <div className="space-y-0.5">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
               Recently Available Resources
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Equipment shared by participating member colleges and makerspaces.
+              Verified equipment shared by participating member colleges and makerspaces.
             </p>
           </div>
           <Link
@@ -272,29 +284,37 @@ export default function OverviewPage() {
           </Link>
         </div>
 
-        <EmptyState
-          icon={<Boxes className="h-6 w-6 text-slate-500" />}
-          title="No live resource listings yet"
-          description="The repository foundation is initialized and awaiting Supabase database connectivity. Verified lab equipment and shared spaces will display here once resources are registered."
-          action={
-            <div className="flex flex-wrap items-center gap-3">
-              <Link href="/resources">
-                <Button variant="teal" size="sm">
-                  <span>Open Resource Directory</span>
-                </Button>
-              </Link>
-              <Link href="/my-resources">
-                <Button variant="outline" size="sm">
-                  <span>Register First Resource</span>
-                </Button>
-              </Link>
-            </div>
-          }
-        />
+        {recentResources.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {recentResources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<Boxes className="h-6 w-6 text-slate-500" />}
+            title="No live resource listings yet"
+            description="The catalog database is initialized. Verified lab equipment and shared spaces will display here once resources are registered and published."
+            action={
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/resources">
+                  <Button variant="teal" size="sm">
+                    <span>Open Resource Directory</span>
+                  </Button>
+                </Link>
+                <Link href="/my-resources/new">
+                  <Button variant="outline" size="sm">
+                    <span>List First Resource</span>
+                  </Button>
+                </Link>
+              </div>
+            }
+          />
+        )}
       </div>
 
       {/* Trust & Custody Lifecycle Workflow */}
-      <div className="mt-12 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
         <div className="max-w-2xl">
           <Badge variant="teal" className="mb-2">
             Governance Framework
@@ -335,6 +355,27 @@ export default function OverviewPage() {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function OverviewPage() {
+  return (
+    <ContentContainer>
+      <React.Suspense
+        fallback={
+          <div className="space-y-6">
+            <PageHeader
+              title="Institutional Resource Overview"
+              description="Loading dashboard metrics..."
+              badge={<Badge variant="teal">TechCircuit Network</Badge>}
+            />
+            <LoadingState message="Connecting to consortium catalog..." />
+          </div>
+        }
+      >
+        <OverviewContent />
+      </React.Suspense>
     </ContentContainer>
   );
 }
