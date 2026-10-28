@@ -4,12 +4,11 @@ import { notFound } from "next/navigation";
 import { ContentContainer } from "@/components/ui/content-container";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { getResourceById } from "@/features/resources/services/resource-service";
 import { getCurrentUser } from "@/lib/supabase/auth";
 import { MyResourceActions } from "@/features/resources/components/my-resource-actions";
+import { BookingRequestForm } from "@/features/bookings/components/booking-request-form";
 import {
   ArrowLeft,
   Building2,
@@ -21,7 +20,6 @@ import {
   CheckCircle2,
   Info,
   Layers,
-  Lock,
   UserCheck,
 } from "lucide-react";
 
@@ -276,59 +274,9 @@ async function ResourceDetailsContent({ params }: ResourceDetailsPageProps) {
 
         {/* Right Column: Custodian Info & Action Card (1 Col) */}
         <div className="space-y-6">
-          {/* Reservation Card */}
-          <Card className="sticky top-6 shadow-md border-slate-200 dark:border-slate-800">
-            <CardHeader className="p-5 pb-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Security Deposit
-                </span>
-                <Badge variant={resource.deposit_amount > 0 ? "teal" : "neutral"}>
-                  {resource.deposit_amount > 0 ? "Refundable" : "No Deposit"}
-                </Badge>
-              </div>
+          {/* Live Booking Request Form */}
+          <BookingRequestForm resource={resource} currentUserId={user?.id} />
 
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">
-                  ${Number(resource.deposit_amount).toFixed(2)}
-                </span>
-                <span className="text-xs font-semibold text-slate-500">
-                  {resource.currency || "USD"}
-                </span>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-5 pt-2 space-y-4">
-              <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
-                  <span>Institutional clearance validated</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
-                  <span>Condition inspection audit on return</span>
-                </div>
-              </div>
-
-              {/* Informative Booking CTA (Phase 4 integration placeholder) */}
-              <div className="pt-2">
-                <Button
-                  variant="teal"
-                  size="lg"
-                  className="w-full justify-center opacity-85 cursor-not-allowed"
-                  disabled
-                  title="Booking workflows activate in Phase 4"
-                >
-                  <Lock className="h-4 w-4 mr-1.5" />
-                  <span>Request Booking</span>
-                </Button>
-
-                <p className="mt-2 text-center text-[11px] text-slate-500 dark:text-slate-400">
-                  Authoritative scheduling and dispute-free reservations will be enabled in the upcoming booking workflow phase.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Custodian Profile Card (Approved public profile fields only) */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-3">

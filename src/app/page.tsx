@@ -12,6 +12,9 @@ import {
   getResources,
   getPublishedResourceCount,
 } from "@/features/resources/services/resource-service";
+import { getCurrentUser } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/server";
+import { getPendingApprovalsCount } from "@/features/bookings/services/booking-service";
 import {
   Search,
   PlusCircle,
@@ -29,10 +32,36 @@ import {
 } from "lucide-react";
 
 async function OverviewContent() {
-  const [{ resources: recentResources }, publishedCount] = await Promise.all([
-    getResources({ limit: 4, sort: "newest" }),
-    getPublishedResourceCount(),
-  ]);
+  const { user } = await getCurrentUser();
+
+  const [{ resources: recentResources }, publishedCount, pendingApprovalsCount, pendingBookingsCount, activeLoansCount] =
+    await Promise.all([
+      getResources({ limit: 4, sort: "newest" }),
+      getPublishedResourceCount(),
+      user ? getPendingApprovalsCount(user.id) : Promise.resolve(0),
+      user
+        ? (async () => {
+            const supabase = await createClient();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST count query
+            const { count } = await (supabase.from("bookings") as any)
+              .select("id", { count: "exact", head: true })
+              .eq("borrower_id", user.id)
+              .eq("status", "requested");
+            return count || 0;
+          })()
+        : Promise.resolve(0),
+      user
+        ? (async () => {
+            const supabase = await createClient();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST count query
+            const { count } = await (supabase.from("bookings") as any)
+              .select("id", { count: "exact", head: true })
+              .eq("borrower_id", user.id)
+              .in("status", ["approved", "checked_out"]);
+            return count || 0;
+          })()
+        : Promise.resolve(0),
+    ]);
 
   const summaryMetrics = [
     {
@@ -45,27 +74,27 @@ async function OverviewContent() {
     },
     {
       title: "Pending Bookings",
-      value: "0",
-      status: "Queue Empty",
+      value: pendingBookingsCount.toString(),
+      status: pendingBookingsCount > 0 ? "Under Review" : user ? "Queue Empty" : "Sign In to View",
       description: "Requests awaiting custodian review",
       icon: Clock,
-      badgeVariant: "neutral" as const,
+      badgeVariant: (pendingBookingsCount > 0 ? "warning" : "neutral") as "warning" | "neutral",
     },
     {
-      title: "Active Loans",
-      value: "0",
-      status: "No Active Custody",
-      description: "Equipment currently checked out",
+      title: "Active Reservations",
+      value: activeLoansCount.toString(),
+      status: activeLoansCount > 0 ? "Active Custody" : "No Active Slots",
+      description: "Approved or checked-out apparatus",
       icon: Calendar,
-      badgeVariant: "neutral" as const,
+      badgeVariant: (activeLoansCount > 0 ? "teal" : "neutral") as "teal" | "neutral",
     },
     {
       title: "Approvals Needed",
-      value: "0",
-      status: "Up to Date",
-      description: "Action items for your listed items",
+      value: pendingApprovalsCount.toString(),
+      status: pendingApprovalsCount > 0 ? "Action Required" : "Up to Date",
+      description: "Incoming requests for your apparatus",
       icon: FileCheck,
-      badgeVariant: "neutral" as const,
+      badgeVariant: (pendingApprovalsCount > 0 ? "warning" : "neutral") as "warning" | "neutral",
     },
   ];
 
