@@ -333,3 +333,4 @@ Projects future booking volume across a 7- to 60-day horizon using an ML Ridge R
 | **Underutilization Detection** | **Baseline Statistical** | Operational hours ratio + percentile clustering | Utilization Rate (%) | Reliable, non-speculative calculation of real idle hours vs booked time. | Continuous check-in / check-out telemetry and cancellation telemetry. |
 | **Demand Forecasting Baseline** | **Baseline Heuristic** | 4-Week Day-of-Week Moving Average | MAE & RMSE | Industry-standard benchmark capturing basic weekly cyclicality. | Historical booking logs. |
 | **Demand Forecasting ML** | **ML** | Ridge Regression with L2 Regularization & Temporal Lags | MAE, RMSE, $R^2$ | Avoids overfitting on small academic datasets while modeling weekly seasonality (`lag_7`), short-term momentum (`lag_1`), and moving averages. | 6+ months of real booking data, academic term calendar dates (exam periods, breaks), and weather/holiday factors. |
+
