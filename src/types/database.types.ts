@@ -481,6 +481,10 @@ export interface Database {
         Args: { check_booking_id: string; check_user_id: string };
         Returns: boolean;
       };
+      request_institutional_verification: {
+        Args: { notes?: string | null };
+        Returns: boolean;
+      };
     };
     Enums: {
       user_role: UserRole;

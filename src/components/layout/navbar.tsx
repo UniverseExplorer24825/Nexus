@@ -26,12 +26,24 @@ export function Navbar() {
           >
             Overview
           </Link>
-          <span className="text-xs text-slate-400 dark:text-slate-600 cursor-not-allowed">
-            Directory (Phase 2)
-          </span>
-          <span className="text-xs text-slate-400 dark:text-slate-600 cursor-not-allowed">
-            Bookings (Phase 3)
-          </span>
+          <Link
+            href="/resources"
+            className="transition-colors hover:text-slate-900 dark:hover:text-slate-100"
+          >
+            Directory
+          </Link>
+          <Link
+            href="/bookings"
+            className="transition-colors hover:text-slate-900 dark:hover:text-slate-100"
+          >
+            My Bookings
+          </Link>
+          <Link
+            href="/activity"
+            className="transition-colors hover:text-slate-900 dark:hover:text-slate-100"
+          >
+            Audit Trail
+          </Link>
         </nav>
       </div>
     </header>

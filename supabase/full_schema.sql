@@ -1029,3 +1029,43 @@ CREATE POLICY "Authenticated users can insert notifications"
     auth.uid() IS NOT NULL
   );
 
+-- 13. MIGRATION 8: PERMIT SELF-VERIFICATION REQUEST TO PENDING & RPC
+CREATE OR REPLACE FUNCTION public.request_institutional_verification(notes TEXT DEFAULT NULL)
+RETURNS BOOLEAN
+SECURITY DEFINER
+SET search_path = public, auth
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_uid UUID;
+  v_current_status verification_status;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Authentication required to request verification.';
+  END IF;
+
+  SELECT verification_status INTO v_current_status
+  FROM public.profiles
+  WHERE id = v_uid;
+
+  IF v_current_status = 'verified' THEN
+    RAISE EXCEPTION 'Your institutional account is already verified.';
+  END IF;
+
+  IF v_current_status = 'pending' THEN
+    RAISE EXCEPTION 'Verification request is already under administrative review.';
+  END IF;
+
+  UPDATE public.profiles
+  SET
+    verification_status = 'pending',
+    verification_notes = COALESCE(notes, verification_notes),
+    updated_at = NOW()
+  WHERE id = v_uid;
+
+  RETURN TRUE;
+END;
+$$;
+
+
