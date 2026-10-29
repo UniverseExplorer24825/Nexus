@@ -71,6 +71,7 @@ async function OverviewContent() {
       description: "Apparatus & spaces ready for booking",
       icon: Boxes,
       badgeVariant: (publishedCount > 0 ? "teal" : "neutral") as "teal" | "neutral",
+      href: "/resources",
     },
     {
       title: "Pending Bookings",
@@ -79,6 +80,7 @@ async function OverviewContent() {
       description: "Requests awaiting custodian review",
       icon: Clock,
       badgeVariant: (pendingBookingsCount > 0 ? "warning" : "neutral") as "warning" | "neutral",
+      href: "/bookings",
     },
     {
       title: "Active Reservations",
@@ -87,6 +89,7 @@ async function OverviewContent() {
       description: "Approved or checked-out apparatus",
       icon: Calendar,
       badgeVariant: (activeLoansCount > 0 ? "teal" : "neutral") as "teal" | "neutral",
+      href: "/bookings",
     },
     {
       title: "Approvals Needed",
@@ -95,6 +98,7 @@ async function OverviewContent() {
       description: "Incoming requests for your apparatus",
       icon: FileCheck,
       badgeVariant: (pendingApprovalsCount > 0 ? "warning" : "neutral") as "warning" | "neutral",
+      href: "/approvals",
     },
   ];
 
@@ -222,27 +226,33 @@ async function OverviewContent() {
           {summaryMetrics.map((metric) => {
             const Icon = metric.icon;
             return (
-              <Card key={metric.title} className="relative overflow-hidden">
-                <CardHeader className="p-5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {metric.title}
-                    </span>
-                    <Badge variant={metric.badgeVariant} className="text-[10px]">
-                      {metric.status}
-                    </Badge>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-                      {metric.value}
-                    </span>
-                    <Icon className="ml-auto h-5 w-5 text-slate-400 dark:text-slate-500" />
-                  </div>
-                  <CardDescription className="mt-1 text-xs">
-                    {metric.description}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+              <Link
+                key={metric.title}
+                href={metric.href}
+                className="block transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 rounded-xl"
+              >
+                <Card className="relative overflow-hidden transition-colors hover:border-teal-400 dark:hover:border-teal-600">
+                  <CardHeader className="p-5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {metric.title}
+                      </span>
+                      <Badge variant={metric.badgeVariant} className="text-[10px]">
+                        {metric.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+                        {metric.value}
+                      </span>
+                      <Icon className="ml-auto h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <CardDescription className="mt-1 text-xs">
+                      {metric.description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
             );
           })}
         </div>

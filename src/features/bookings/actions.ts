@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/supabase/auth";
 import type { BookingDecision, EligibilityCheckStatus } from "./types";
 import { uploadConditionPhoto } from "./services/condition-storage-service";
-import { sendInAppNotification } from "./services/booking-service";
+import {
+  sendInAppNotification,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "./services/booking-service";
 
 export interface BookingActionResult {
   success?: boolean;
@@ -88,6 +92,32 @@ export async function createBookingRequestAction(
     return { error: "Resource custodians cannot submit booking reservations for apparatus they manage." };
   }
 
+  // Fair-Use & Governance: Verify borrower account is not suspended
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: borrowerProfile } = await (supabase.from("profiles") as any)
+    .select("is_suspended, suspension_reason, full_name, verification_status")
+    .eq("id", user.id)
+    .single();
+
+  if (borrowerProfile?.is_suspended) {
+    return {
+      error: `Account Restricted: Your account is on administrative hold (${borrowerProfile.suspension_reason || "Contact facility manager"}). New equipment reservations cannot be submitted.`,
+    };
+  }
+
+  // Fair-Use: Prevent monopolization of shared resources (maximum 4 active or pending apparatus reservations)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count: activeCount } = await (supabase.from("bookings") as any)
+    .select("id", { count: "exact", head: true })
+    .eq("borrower_id", user.id)
+    .in("status", ["requested", "approved", "checked_out"]);
+
+  if (activeCount !== null && activeCount >= 4) {
+    return {
+      error: `Fair-Use Policy: You currently have ${activeCount} active or pending apparatus reservations. To ensure equitable access for all researchers, please complete or return current equipment before placing additional reservations.`,
+    };
+  }
+
   // Insert booking request
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST insert query
   const { data: booking, error: insertError } = await (supabase.from("bookings") as any)
@@ -106,6 +136,19 @@ export async function createBookingRequestAction(
     console.error("[BookingAction] Insert error:", insertError?.message);
     return { error: `Failed to submit reservation request: ${insertError?.message || "Unknown error"}` };
   }
+
+  // Notify resource custodian of new incoming request
+  await sendInAppNotification(
+    resource.owner_id,
+    "New Reservation Request",
+    `${borrowerProfile?.full_name || "A researcher"} requested "${resource.title}" (${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}).`,
+    "booking",
+    booking.id,
+    resourceId,
+    undefined,
+    "/approvals?status=pending",
+    `booking_requested_${booking.id}`
+  );
 
   revalidatePath(`/resources/${resourceId}`);
   revalidatePath("/bookings");
@@ -211,6 +254,32 @@ export async function decideBookingAction(
     return { success: false, error: updateError.message };
   }
 
+  // Send notification to borrower regarding custodian decision
+  const decisionTitle =
+    decision === "approved"
+      ? "Reservation Request Approved"
+      : decision === "waitlisted"
+      ? "Placed on Waiting List"
+      : "Reservation Request Declined";
+  const decisionMsg =
+    decision === "approved"
+      ? `Your reservation for "${booking.resource?.title || "apparatus"}" has been authorized. You can proceed with safety acknowledgement at handover time.`
+      : decision === "waitlisted"
+      ? `Your request for "${booking.resource?.title || "apparatus"}" is on the waiting list. You will be notified if a slot opens.`
+      : `Your reservation request for "${booking.resource?.title || "apparatus"}" was declined: ${decisionNotes || "No specific reason provided."}`;
+
+  await sendInAppNotification(
+    booking.borrower_id,
+    decisionTitle,
+    decisionMsg,
+    "booking",
+    bookingId,
+    booking.resource_id,
+    undefined,
+    `/bookings/${bookingId}`,
+    `decision_${decision}_${bookingId}`
+  );
+
   revalidatePath("/approvals");
   revalidatePath("/bookings");
   revalidatePath(`/resources/${booking.resource_id}`);
@@ -236,7 +305,7 @@ export async function cancelBookingAction(
       resource_id,
       borrower_id,
       status,
-      resource:resources (owner_id)
+      resource:resources (title, owner_id)
     `
     )
     .eq("id", bookingId)
@@ -268,6 +337,46 @@ export async function cancelBookingAction(
 
   if (updateError) {
     return { success: false, error: updateError.message };
+  }
+
+  // Notify counterparty of cancellation
+  const counterpartyId = isBorrower ? booking.resource?.owner_id : booking.borrower_id;
+  if (counterpartyId) {
+    await sendInAppNotification(
+      counterpartyId,
+      "Reservation Cancelled",
+      `Reservation for "${booking.resource?.title || "apparatus"}" was cancelled (${isBorrower ? "by borrower" : "by custodian"}).`,
+      "booking",
+      bookingId,
+      booking.resource_id,
+      undefined,
+      `/bookings/${bookingId}`,
+      `cancelled_${bookingId}`
+    );
+  }
+
+  // Transparent Waitlist Notification: If slot opened, notify the first waitlisted candidate (FIFO)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: topWaitlisted } = await (supabase.from("bookings") as any)
+    .select("id, borrower_id, resource:resources (title)")
+    .eq("resource_id", booking.resource_id)
+    .eq("status", "waitlisted")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (topWaitlisted?.borrower_id) {
+    await sendInAppNotification(
+      topWaitlisted.borrower_id,
+      "Waitlist Priority Notice",
+      `A timeslot has opened for "${topWaitlisted.resource?.title || "apparatus"}". You are #1 on the waiting list!`,
+      "booking",
+      topWaitlisted.id,
+      booking.resource_id,
+      undefined,
+      `/bookings/${topWaitlisted.id}`,
+      `waitlist_promoted_${topWaitlisted.id}`
+    );
   }
 
   revalidatePath("/bookings");
@@ -891,4 +1000,36 @@ export async function resolveIncidentAction(
 
   return { success: true };
 }
+
+/**
+ * Marks a single notification as read.
+ */
+export async function markNotificationAsReadAction(
+  notificationId: string
+): Promise<{ success: boolean; error?: string }> {
+  const { user } = await requireUser();
+  const res = await markNotificationAsRead(notificationId, user.id);
+  if (res.success) {
+    revalidatePath("/notifications");
+    revalidatePath("/");
+  }
+  return res;
+}
+
+/**
+ * Marks all notifications for the current user as read.
+ */
+export async function markAllNotificationsAsReadAction(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const { user } = await requireUser();
+  const res = await markAllNotificationsAsRead(user.id);
+  if (res.success) {
+    revalidatePath("/notifications");
+    revalidatePath("/");
+  }
+  return res;
+}
+
 

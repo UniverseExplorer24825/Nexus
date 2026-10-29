@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { LogIn, LogOut, User as UserIcon, ShieldAlert } from "lucide-react";
+import { LogIn, LogOut, User as UserIcon, ShieldAlert, Bell } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 
 interface UserState {
@@ -13,6 +13,7 @@ interface UserState {
   fullName?: string;
   role?: string;
   verificationStatus?: string;
+  unreadCount?: number;
 }
 
 export function UserNavCard() {
@@ -29,11 +30,18 @@ export function UserNavCard() {
         } = await supabase.auth.getUser();
 
         if (authUser) {
-          const { data } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", authUser.id)
-            .single();
+          const [{ data }, { count: unreadCount }] = await Promise.all([
+            supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", authUser.id)
+              .single(),
+            supabase
+              .from("notifications")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", authUser.id)
+              .eq("is_read", false),
+          ]);
 
           const profile = data as { full_name?: string | null; role?: string; verification_status?: string } | null;
 
@@ -43,6 +51,7 @@ export function UserNavCard() {
             fullName: profile?.full_name || authUser.user_metadata?.full_name || "Member",
             role: profile?.role || "member",
             verificationStatus: profile?.verification_status || "unverified",
+            unreadCount: unreadCount || 0,
           });
         } else {
           setUser(null);
@@ -139,6 +148,19 @@ export function UserNavCard() {
             </p>
           </div>
         </div>
+
+        <Link
+          href="/notifications"
+          className="relative rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          title="Notifications & Alerts"
+        >
+          <Bell className="h-4 w-4" />
+          {user.unreadCount !== undefined && user.unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[9px] font-bold text-white shadow-2xs">
+              {user.unreadCount > 9 ? "9+" : user.unreadCount}
+            </span>
+          )}
+        </Link>
       </div>
 
       <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-800/80">

@@ -6,6 +6,8 @@ import {
   CheckSquare,
   History,
   UserCog,
+  Bell,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,10 +54,22 @@ export const NAV_ITEMS: NavItem[] = [
     description: "Review incoming borrower clearance and booking requests",
   },
   {
+    title: "Notifications",
+    href: "/notifications",
+    icon: Bell,
+    description: "Alerts, approval milestones, and reminders",
+  },
+  {
     title: "Activity History",
     href: "/activity",
     icon: History,
     description: "Auditable custody transfers, condition reports, and logs",
+  },
+  {
+    title: "Institutional Admin",
+    href: "/admin",
+    icon: ShieldCheck,
+    description: "Member verifications, role controls, and facility governance",
   },
   {
     title: "Profile & Settings",
